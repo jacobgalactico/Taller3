@@ -1,47 +1,57 @@
 package com.example.taller3
 
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.taller3.ui.theme.Taller3Theme
+import android.widget.Button
+import android.widget.EditText
+import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var nombreEditText: EditText
+    private lateinit var nombreTextView: TextView
+    private lateinit var dbHelper: DatabaseHelper
+    private val prefs by lazy { getSharedPreferences("MisPreferencias", Context.MODE_PRIVATE) }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            Taller3Theme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
-            }
+        setContentView(R.layout.activity_main)
+
+        dbHelper = DatabaseHelper(this)
+
+        nombreEditText = findViewById(R.id.nombreEditText)
+        nombreTextView = findViewById(R.id.nombreTextView)
+        val guardarButton = findViewById<Button>(R.id.guardarButton)
+        val cargarButton = findViewById<Button>(R.id.cargarButton)
+        val configuracionButton = findViewById<Button>(R.id.configuracionButton)
+
+        // Guardar en SharedPreferences
+        guardarButton.setOnClickListener {
+            val nombre = nombreEditText.text.toString()
+            prefs.edit().putString("NOMBRE", nombre).apply()
+            dbHelper.guardarUsuario(nombre)
+            mostrarNombre()
         }
+
+        // Cargar desde SQLite
+        cargarButton.setOnClickListener {
+            val nombre = dbHelper.obtenerUsuario()
+            nombreTextView.text = "Hola, $nombre"
+        }
+
+        // Botón para ir a SettingsActivity
+        configuracionButton.setOnClickListener {
+            val intent = Intent(this, SettingsActivity::class.java)
+            startActivity(intent)
+        }
+
+        mostrarNombre()
     }
-}
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    Taller3Theme {
-        Greeting("Android")
+    private fun mostrarNombre() {
+        val nombre = prefs.getString("NOMBRE", "Invitado")
+        nombreTextView.text = "Hola, $nombre"
     }
 }
